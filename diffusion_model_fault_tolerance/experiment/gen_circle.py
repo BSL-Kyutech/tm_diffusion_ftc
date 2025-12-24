@@ -41,7 +41,7 @@ def main():
     
     # Pub&Sub
     pub = PressurePublisher()
-    mocap = MocapSubscriber()
+    mocap = MocapSubscriber(node)
     
     # モデルと目標軌道の提示
     diffusion_model = Generator()
