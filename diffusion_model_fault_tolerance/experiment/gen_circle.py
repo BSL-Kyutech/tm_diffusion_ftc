@@ -43,9 +43,11 @@ def main():
     pub = PressurePublisher()
     mocap = MocapSubscriber(node)
     
+    base_dir = "diffusion_model_fault_tolerance/"
+    model_dir = base_dir + "model"
     # モデルと目標軌道の提示
     diffusion_model = Diffuser()
-    diffusion_model.load_dir("model")
+    diffusion_model.load_dir(model_dir)
     X, Y, Z = generate_circle()
     
     # 推論の実行
