@@ -12,7 +12,10 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        (os.path.join("shere",package_name, "model"), glob("diffusion_model_fault_tolerance/model/*")),
+
+        (os.path.join('share', package_name, 'model'), 
+         glob(os.path.join(package_name, 'model', '*.csv')) +
+         glob(os.path.join(package_name, 'model', '*.pth'))),
         
     ],
     install_requires=['setuptools'],
@@ -27,4 +30,4 @@ setup(
             'gen_circle = diffusion_model_fault_tolerance.experiment.gen_circle:main',
         ],
     },
-)
+    )
