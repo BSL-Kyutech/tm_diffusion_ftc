@@ -72,16 +72,16 @@ def main():
         '/mocap/rigidbody1/pos1':y,
         '/mocap/rigidbody1/pos2':z
         },{
-        },initial_control_input={'tenpa/pressure/desired0/pressure0':150,
-                                 'tenpa/pressure/desired0/pressure1':150,
-                                 'tenpa/pressure/desired0/pressure2':150,
-                                 'tenpa/pressure/desired0/pressure3':150,
-                                 'tenpa/pressure/desired0/pressure4':150,
-                                 'tenpa/pressure/desired0/pressure5':150,
-                                 'tenpa/pressure/desired0/pressure6':150,
-                                 'tenpa/pressure/desired0/pressure7':150,
-                                 'tenpa/pressure/desired0/pressure8':150,
-                                 'tenpa/pressure/desired0/pressure9':150,})
+        },initial_control_input={'/tenpa/pressure/desired0/pressure0':150,
+                                 '/tenpa/pressure/desired0/pressure1':150,
+                                 '/tenpa/pressure/desired0/pressure2':150,
+                                 '/tenpa/pressure/desired0/pressure3':150,
+                                 '/tenpa/pressure/desired0/pressure4':150,
+                                 '/tenpa/pressure/desired0/pressure5':150,
+                                 '/tenpa/pressure/desired0/pressure6':150,
+                                 '/tenpa/pressure/desired0/pressure7':150,
+                                 '/tenpa/pressure/desired0/pressure8':150,
+                                 '/tenpa/pressure/desired0/pressure9':150,})
         print(f"output_shape: {output.shape}")
         # outputを長さ40のlist[int]に変換
         output = pressure40_to_list(output)
