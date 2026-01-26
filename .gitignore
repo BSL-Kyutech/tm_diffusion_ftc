@@ -171,3 +171,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Pytorch model files
+*.pth
+
+# CSV data files
+*.csv

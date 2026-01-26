@@ -66,31 +66,39 @@ def main():
     print(f"x, y, z lengths: {len(X)}, {len(Y)}, {len(Z)}")
     # 推論の実行
     output_list:List[List[int]] = []
-    for x, y, z in zip(X, Y, Z):
-        output = diffusion_model.gen({
+    # 1ステップ前の制御入力の有無を判定するbool値
+    prev_u = None
+    for i, (x, y, z) in enumerate(zip(X, Y, Z)):
+        output_tensor = diffusion_model.gen({
         '/mocap/rigidbody1/pos0':x,
         '/mocap/rigidbody1/pos1':y,
         '/mocap/rigidbody1/pos2':z,
         },{
         },initial_control_input={
-                                 })
-        print(f"output: {output}")
+                                 },
+        prev_control_input=prev_u,
+        )
+        # print(f"output: {output_tensor}")
+        # print(f"output_max:{output_tensor.max().item()},output_min:{output_tensor.min().item()}")
         # outputを長さ40のlist[int]に変換
-        output = pressure40_to_list(output)
+        output = pressure40_to_list(output_tensor)
         output_list.append(output)
+        # このステップのoutputを次のステップのprev_uとする．
+        prev_u = output_tensor.detach()
+        # print(f"{i}th prev_u:{prev_u}")
     # print(f"output_list_shape: {len(output_list)}")   
     
     # 実験の実行(publish & mocap受信)
-    sleep_time = 0.005
+    sleep_time = 0.02
     first_wait = 2.0
-    interp_resolution = 100
+    interp_resolution = 10
     
     result_x: List[float] = []
     result_y: List[float] = []
     result_z: List[float] = []
     
     # 受信町の最大時間
-    receive_time_sec = 0.2
+    receive_time_sec = 0.02
     
     def wait_mocap_once(timeout_sec: float) -> Tuple[float, float, float] | None:
         # mocapから1サンプル受信するまでspin_onceで待つ．
@@ -108,8 +116,9 @@ def main():
     for i,u40 in enumerate(output_list):
         
         # 目標点をiとしてpublish
-        # pub.publish40(u40)
-        
+        pub.publish40(u40)
+        # pubされた値を出力
+        print(f"Published step {i} pressure command: {u40}")
         # 最初だけ少し待つ
         time.sleep(first_wait if i == 0 else sleep_time)
         
@@ -129,8 +138,10 @@ def main():
         
         # 次の点があるなら補間して滑らかに送る
         if i + 1 < len(output_list):
-            for mid in interp40(u40, output_list[i + 1], interp_resolution):
+            for j,mid in enumerate(interp40(u40, output_list[i + 1], interp_resolution)):
                 pub.publish40(mid)
+                # publishされた値を出力
+                print(f"Published {j}th interp pressure command: {mid}")
                 time.sleep(sleep_time)
     
     # 終了時にマニピュレータを立たせる処理
