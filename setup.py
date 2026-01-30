@@ -2,7 +2,7 @@ import os
 from glob import glob
 from setuptools import find_packages, setup
 
-package_name = 'diffusion_model_fault_tolerance'
+package_name = 'tm_diffusion_ftc'
 
 setup(
     name=package_name,
@@ -27,7 +27,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'gen_circle = diffusion_model_fault_tolerance.experiment.gen_circle:main',
+            'gen_circle = tm_diffusion_ftc.experiment.gen_circle:main',
         ],
     },
     )

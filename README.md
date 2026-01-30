@@ -1,1 +1,1 @@
-# diffusion-model-fault-tolerance
+# tm_diffusion_ftc
