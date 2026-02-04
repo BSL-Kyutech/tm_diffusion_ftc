@@ -3,11 +3,13 @@ from __future__ import annotations
 import time
 from typing import List, Sequence, Tuple
 import os
+import torch
 import numpy as np
 import pandas as pd
 import rclpy
 from pathlib import Path
 from rclpy.node import Node
+from datetime import datetime
 from tm_diffusion_ftc.trajectory.target_circle import generate_circle
 from robotdiffusion.diffuser import Diffuser
 from tm_diffusion_ftc.io.pressure_publisher import PressurePublisher
@@ -20,7 +22,7 @@ def pressure40_to_list(output) -> List[int]:
     arr = arr.reshape(-1)
     if arr.size != 40:
         raise ValueError(f"Expected 40 values from diffusion output, got {arr.size}")
-    # arr = np.clip(arr, 0, 255).astype(np.int32)
+    # arr = np.clip(arr, 0, 255).astype(np.float32)
     return arr.tolist()
 
     # # diffusion_model.genの返り値を長さ40のlist[int]に整形する．
@@ -66,25 +68,56 @@ def main():
     print(f"x, y, z lengths: {len(X)}, {len(Y)}, {len(Z)}")
     # 推論の実行
     output_list:List[List[int]] = []
-    # 1ステップ前の制御入力の有無を判定するbool値
-    prev_u = None
+    # 初回かどうか判別するbool値
+    first = True
+    
     for i, (x, y, z) in enumerate(zip(X, Y, Z)):
-        output_tensor = diffusion_model.gen({
-        '/mocap/rigidbody1/pos0':x,
-        '/mocap/rigidbody1/pos1':y,
-        '/mocap/rigidbody1/pos2':z,
-        },{
-        },initial_control_input={
-                                 },
-        prev_control_input=prev_u,
+        # output_tensor = torch.Tensor([0 for i in range(40)])
+        
+        if first:
+            first = False
+            output_tensor = diffusion_model.gen({
+            '/mocap/rigidbody1/pos0':x,
+            '/mocap/rigidbody1/pos1':y,
+            '/mocap/rigidbody1/pos2':z,
+            },{
+            },initial_control_input={
+                '/tenpa/pressure/desired0/pressure0':150,
+                '/tenpa/pressure/desired0/pressure1':150,
+                '/tenpa/pressure/desired0/pressure2':150,
+                '/tenpa/pressure/desired0/pressure3':150,
+                '/tenpa/pressure/desired0/pressure4':150,
+                '/tenpa/pressure/desired0/pressure5':150,
+                '/tenpa/pressure/desired0/pressure6':150,
+                '/tenpa/pressure/desired0/pressure7':150
+                                    },
+            )
+        
+        else:
+            output_tensor = diffusion_model.gen_from_middle(
+            {
+                '/mocap/rigidbody1/pos0':x,
+                '/mocap/rigidbody1/pos1':y,
+                '/mocap/rigidbody1/pos2':z
+            },
+            {},
+            output_tensor,
+            30,
+            initial_control_input={               
+                '/tenpa/pressure/desired0/pressure0':150,
+                '/tenpa/pressure/desired0/pressure1':150,
+                '/tenpa/pressure/desired0/pressure2':150,
+                '/tenpa/pressure/desired0/pressure3':150,
+                '/tenpa/pressure/desired0/pressure4':150,
+                '/tenpa/pressure/desired0/pressure5':150,
+                '/tenpa/pressure/desired0/pressure6':150,
+                '/tenpa/pressure/desired0/pressure7':150
+                                    },
         )
-        # print(f"output: {output_tensor}")
-        # print(f"output_max:{output_tensor.max().item()},output_min:{output_tensor.min().item()}")
-        # outputを長さ40のlist[int]に変換
+            
         output = pressure40_to_list(output_tensor)
         output_list.append(output)
-        # このステップのoutputを次のステップのprev_uとする．
-        prev_u = output_tensor.detach()
+        
         # print(f"{i}th prev_u:{prev_u}")
     # print(f"output_list_shape: {len(output_list)}")   
     
@@ -155,11 +188,17 @@ def main():
     # csvファイルに保存
     target_df = pd.DataFrame({"x": X, "y": Y, "z": Z})
     result_df = pd.DataFrame({"x": result_x, "y": result_y, "z": result_z})
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    save_dir = Path.cwd() / "data" / "circle_experiment" / timestamp
+    save_dir.mkdir(parents=True, exist_ok=True)
+    target_path = save_dir / "target_circle_path.csv"
+    result_path = save_dir / "result_circle_path.csv"
 
-    target_df.to_csv("target_circle_path.csv", index=False)
-    result_df.to_csv("result_circle_path.csv", index=False)
+    target_df.to_csv(target_path, index=False)
+    result_df.to_csv(result_path, index=False)
 
-    node.get_logger().info("Saved target_circle_path.csv / result_circle_path.csv")
+    node.get_logger().info(f"Saved CSVs to {save_dir}")
     
     # nodeの終了処理
     node.destroy_node()

@@ -1,6 +1,7 @@
 import pandas as pd
 from robotdiffusion import Diffuser
 
+
 actuator_columns =[]
 for i in range(4):
     for j in range(10):
